@@ -1,0 +1,16 @@
+#VRML_SIM R2023b utf8
+WorldInfo {
+  basicTimeStep 16
+}
+Viewpoint {
+  orientation 0.57735 0.57735 0.57735 2.0944
+  position 3 3 3
+}
+TexturedBackground {}
+TexturedBackgroundLight {}
+Robot {
+  translation 0 0 0.1
+  rotation 0 1 0 0
+  name "slugbot"
+  controller "example_controller"
+}
