@@ -12,5 +12,5 @@ Robot {
   translation 0 0 0.1
   rotation 0 1 0 0
   name "slugbot"
-  controller "example_controller"
+  controller "<extern>"
 }
