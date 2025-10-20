@@ -1,0 +1,32 @@
+# Build artifacts
+build/
+install/
+log/
+
+# Python virtual environments
+venv/
+.venv/
+
+# ROS-specific files
+*.rosinstall
+*.rviz
+*.db
+*.sqlite3
+*.msg
+*.srv
+*.action
+*.idl
+
+# Editor/IDE specific files (e.g., VS Code)
+.vscode/
+.idea/
+
+# Operating System specific files
+.DS_Store
+Thumbs.db
+
+# Other common ignored files
+*~
+*.bak
+*.swp
+*.orig
