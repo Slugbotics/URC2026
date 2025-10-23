@@ -2,7 +2,8 @@
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackground.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/floors/protos/CircleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/floors/protos/UnevenTerrain.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/appearances/protos/SandyGround.proto"
 EXTERNPROTO "../protos/SlugRobot.proto"
 
 WorldInfo {
@@ -16,10 +17,36 @@ TexturedBackground {
 }
 TexturedBackgroundLight {
 }
-CircleArena {
+
+DirectionalLight {
+  direction -0.5 -1 -0.3
+  color 1 0.95 0.85
+  intensity 1.0
+  castShadows TRUE
+}
+
+UnevenTerrain {
+  translation 0 0 0
+  rotation 0 0 1 0
+  name "desert_terrain"
+  # larger, taller terrain:
+  # - larger horizontal area so the robot can traverse dunes
+  # - vertical size (z) increased to 3.0 m for taller hills
+  # - grid resolution increased so spacing remains reasonable (~0.2 m)
+  size 30 30 3.0
+  # resolution such that spacing ~= 30 / 149 ~= 0.201 m
+  xDimension 150
+  yDimension 150
+  randomSeed 456
+  perlinNOctaves 6
+  flatCenter FALSE
+  # use SandyGround appearance with tighter texture scaling for a better sand look
+  appearance SandyGround {
+    textureTransform TextureTransform { scale 10 10 }
+  }
 }
 DEF SLUG_BOT SlugRobot {
-  translation 0 0 .1
+  translation 0 0 .12
   controller "<extern>"
   name "slugbot"
 }
