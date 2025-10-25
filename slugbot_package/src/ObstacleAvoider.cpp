@@ -1,7 +1,6 @@
 #include "slugbot_package/ObstacleAvoider.hpp"
-#include "rclcpp/rclcpp.hpp"
 
-#define MAX_RANGE 0.5
+#define MAX_RANGE 1.5
 
 ObstacleAvoider::ObstacleAvoider() : Node("obstacle_avoider") {
   publisher_ = create_publisher<geometry_msgs::msg::Twist>("/cmd_vel_avoid", 1);
@@ -29,11 +28,8 @@ void ObstacleAvoider::leftSensorCallback(
 void ObstacleAvoider::rightSensorCallback(
   const sensor_msgs::msg::Range::SharedPtr msg) {
   right_sensor_value = msg->range;
-  RCLCPP_INFO(this->get_logger(), "Left: %.2f, Right: %.2f", left_sensor_value, right_sensor_value);
 
   auto command_message = std::make_unique<geometry_msgs::msg::Twist>();
-
-  // command_message->linear.x = .1;
 
   if (left_sensor_value < 0.9 * MAX_RANGE ||
       right_sensor_value < 0.9 * MAX_RANGE) {
