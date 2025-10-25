@@ -29,6 +29,10 @@ private:
 
   WbDeviceTag left_motors[3];
   WbDeviceTag *left_side;
+  // distance sensors for debugging
+  WbDeviceTag ds_left;
+  WbDeviceTag ds_right;
+  int time_step_ms = 0;
 };
 } // namespace slugbot_driver
 #endif

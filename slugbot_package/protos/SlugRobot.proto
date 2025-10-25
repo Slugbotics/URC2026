@@ -305,7 +305,7 @@ PROTO SlugRobot [
                             RotationalMotor {
                               name "BackLeftWheel"
                               maxVelocity 60
-                              maxTorque 2
+                              maxTorque 0.3
                             }
                           ]
                           endPoint Solid {
@@ -431,7 +431,7 @@ PROTO SlugRobot [
                       RotationalMotor {
                         name "MiddleLeftWheel"
                         maxVelocity 60
-                        maxTorque 2
+                        maxTorque 0.3
                       }
                     ]
                     endPoint Solid {
@@ -656,7 +656,7 @@ PROTO SlugRobot [
                       RotationalMotor {
                         name "FrontLeftWheel"
                         maxVelocity 60
-                        maxTorque 2
+                        maxTorque 0.3
                       }
                     ]
                     endPoint Solid {
@@ -815,7 +815,7 @@ PROTO SlugRobot [
                             RotationalMotor {
                               name "BackRightWheel"
                               maxVelocity 60
-                              maxTorque 2
+                              maxTorque 0.3
                             }
                           ]
                           endPoint Solid {
@@ -889,7 +889,7 @@ PROTO SlugRobot [
                       RotationalMotor {
                         name "MiddleRightWheel"
                         maxVelocity 60
-                        maxTorque 2
+                        maxTorque 0.3
                       }
                     ]
                     endPoint Solid {
@@ -1140,7 +1140,7 @@ PROTO SlugRobot [
                       RotationalMotor {
                         name "FrontRightWheel"
                         maxVelocity 60
-                        maxTorque 2
+                        maxTorque 0.3
                       }
                     ]
                     endPoint Solid {
