@@ -5,10 +5,12 @@
 #include <functional>
 #include <webots/motor.h>
 #include <webots/robot.h>
+#include <webots/keyboard.h>
 
 #define HALF_DISTANCE_BETWEEN_WHEELS 0.24
 #define WHEEL_RADIUS 0.06
 #define WHEEL_COUNT 6
+#define IGNORE_AVOID_MESSAGE true
 
 void set_position(WbDeviceTag *side, float value);
 void set_velocity(WbDeviceTag *side, float value);
@@ -47,11 +49,63 @@ void SlugbotDriver::init(
       [this](const geometry_msgs::msg::Twist::SharedPtr msg){
         this->cmd_vel_msg_input.linear = msg->linear;
         this->cmd_vel_msg_input.angular = msg->angular;
+        this->recieved_input = true;
       }
   );
+
+  time_step_ms = static_cast<int>(wb_robot_get_basic_time_step());
+  wb_keyboard_enable(time_step_ms);
 }
 
 void SlugbotDriver::step() {
+  if(!recieved_input) {
+    // TODO: Move input logic to another file and replace with controller
+    int key;
+    bool w=false, a=false, s=false, d=false;
+    while((key = wb_keyboard_get_key()) != -1) {
+      switch (key) {
+        case 'W':
+        case 'w':
+        case WB_KEYBOARD_UP:
+          w = true;
+          break;
+        case 'S':
+        case 's':
+        case WB_KEYBOARD_DOWN:
+          s = true;
+          break;
+        case 'A':
+        case 'a':
+        case WB_KEYBOARD_LEFT:
+          a = true;
+          break;
+        case 'D':
+        case 'd':
+        case WB_KEYBOARD_RIGHT:
+          d = true;
+          break;
+      }
+    }
+    cmd_vel_msg_input.linear.x = 0.0;
+    cmd_vel_msg_input.angular.z = 0.0;
+    if (IGNORE_AVOID_MESSAGE) {
+      cmd_vel_msg_avoid.linear.x = 0.0;
+      cmd_vel_msg_avoid.angular.z = 0.0;
+    }
+    if (w) {
+      cmd_vel_msg_input.linear.x = 1.0;
+    }
+    if (s) {
+      cmd_vel_msg_input.linear.x += -1.0;
+    }
+    if (a && cmd_vel_msg_avoid.angular.z == 0.0) {
+      cmd_vel_msg_input.angular.z = -2.0;
+    }
+    if (d && cmd_vel_msg_avoid.angular.z == 0.0) {
+      cmd_vel_msg_input.angular.z = 2.0;
+    }
+  }
+
   auto forward_speed = cmd_vel_msg_avoid.linear.x + cmd_vel_msg_input.linear.x;
   auto angular_speed = cmd_vel_msg_avoid.angular.z + cmd_vel_msg_input.angular.z;
 

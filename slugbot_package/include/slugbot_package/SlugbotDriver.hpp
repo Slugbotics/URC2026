@@ -23,6 +23,7 @@ private:
       cmd_vel_subscription_input_;
   geometry_msgs::msg::Twist cmd_vel_msg_avoid;
   geometry_msgs::msg::Twist cmd_vel_msg_input;
+  bool recieved_input = false;
 
   WbDeviceTag right_motors[3];
   WbDeviceTag *right_side;
