@@ -6,6 +6,7 @@
 #include "webots_ros2_driver/WebotsNode.hpp"
 
 #include "geometry_msgs/msg/twist.hpp"
+#include "messages/msg/controller_input.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 namespace slugbot_driver {
@@ -19,8 +20,8 @@ private:
 
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr
       cmd_vel_subscription_avoid_;
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr
-      cmd_vel_subscription_input_;
+  rclcpp::Subscription<messages::msg::ControllerInput>::SharedPtr
+      controller_subscription;
   geometry_msgs::msg::Twist cmd_vel_msg_avoid;
   geometry_msgs::msg::Twist cmd_vel_msg_input;
   bool recieved_input = false;

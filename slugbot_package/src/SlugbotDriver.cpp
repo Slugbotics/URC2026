@@ -44,11 +44,11 @@ void SlugbotDriver::init(
       }
   );
 
-  cmd_vel_subscription_input_ = node->create_subscription<geometry_msgs::msg::Twist>(
-      "/cmd_vel_input", rclcpp::SensorDataQoS().reliable(),
-      [this](const geometry_msgs::msg::Twist::SharedPtr msg){
-        this->cmd_vel_msg_input.linear = msg->linear;
-        this->cmd_vel_msg_input.angular = msg->angular;
+  controller_subscription = node->create_subscription<messages::msg::ControllerInput>(
+      "/controller_input", rclcpp::SensorDataQoS().reliable(),
+      [this](const messages::msg::ControllerInput::SharedPtr msg){
+        this->cmd_vel_msg_input.linear.x = -msg->left_y;
+        this->cmd_vel_msg_input.angular.z = msg->right_x;
         this->recieved_input = true;
       }
   );
@@ -59,7 +59,6 @@ void SlugbotDriver::init(
 
 void SlugbotDriver::step() {
   if(!recieved_input) {
-    // TODO: Move input logic to another file and replace with controller
     int key;
     bool w=false, a=false, s=false, d=false;
     while((key = wb_keyboard_get_key()) != -1) {
