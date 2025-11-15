@@ -3,6 +3,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include <cstdio>
 #include <functional>
+#include <cmath>
 #include <webots/motor.h>
 #include <webots/robot.h>
 #include <webots/keyboard.h>
@@ -47,8 +48,8 @@ void SlugbotDriver::init(
   controller_subscription = node->create_subscription<messages::msg::ControllerInput>(
       "/controller_input", rclcpp::SensorDataQoS().reliable(),
       [this](const messages::msg::ControllerInput::SharedPtr msg){
-        this->cmd_vel_msg_input.linear.x = -msg->left_y;
-        this->cmd_vel_msg_input.angular.z = msg->right_x;
+        this->cmd_vel_msg_input.linear.x = -msg->left_y * std::abs(msg->left_y);
+        this->cmd_vel_msg_input.angular.z = 2 * msg->right_x * std::abs(msg->right_x);
         this->recieved_input = true;
       }
   );
