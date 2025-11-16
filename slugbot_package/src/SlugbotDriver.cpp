@@ -12,6 +12,10 @@
 #define WHEEL_RADIUS 0.06
 #define WHEEL_COUNT 6
 #define IGNORE_AVOID_MESSAGE true
+#define MAX_WHEEL_SPEED 25.0
+#define MAX_LINEAR_SPEED (MAX_WHEEL_SPEED * WHEEL_RADIUS)
+// The actual max angular speed is 2 times this, but that breaks the simulator physics
+#define MAX_ANGULAR_SPEED (MAX_LINEAR_SPEED / HALF_DISTANCE_BETWEEN_WHEELS / 2)
 
 void set_position(WbDeviceTag *side, float value);
 void set_velocity(WbDeviceTag *side, float value);
@@ -48,8 +52,8 @@ void SlugbotDriver::init(
   controller_subscription = node->create_subscription<messages::msg::ControllerInput>(
       "/controller_input", rclcpp::SensorDataQoS().reliable(),
       [this](const messages::msg::ControllerInput::SharedPtr msg){
-        this->cmd_vel_msg_input.linear.x = -msg->left_y * std::abs(msg->left_y);
-        this->cmd_vel_msg_input.angular.z = 2 * msg->right_x * std::abs(msg->right_x);
+        this->cmd_vel_msg_input.linear.x = -MAX_LINEAR_SPEED * msg->left_y * std::abs(msg->left_y);
+        this->cmd_vel_msg_input.angular.z = MAX_ANGULAR_SPEED * msg->right_x * std::abs(msg->right_x);
         this->recieved_input = true;
       }
   );
@@ -93,16 +97,16 @@ void SlugbotDriver::step() {
       cmd_vel_msg_avoid.angular.z = 0.0;
     }
     if (w) {
-      cmd_vel_msg_input.linear.x = 1.0;
+      cmd_vel_msg_input.linear.x = MAX_LINEAR_SPEED;
     }
     if (s) {
-      cmd_vel_msg_input.linear.x += -1.0;
+      cmd_vel_msg_input.linear.x += -MAX_LINEAR_SPEED;
     }
     if (a && cmd_vel_msg_avoid.angular.z == 0.0) {
-      cmd_vel_msg_input.angular.z = -2.0;
+      cmd_vel_msg_input.angular.z = -MAX_ANGULAR_SPEED;
     }
     if (d && cmd_vel_msg_avoid.angular.z == 0.0) {
-      cmd_vel_msg_input.angular.z = 2.0;
+      cmd_vel_msg_input.angular.z = MAX_ANGULAR_SPEED;
     }
   }
 
@@ -110,11 +114,11 @@ void SlugbotDriver::step() {
   auto angular_speed = cmd_vel_msg_avoid.angular.z + cmd_vel_msg_input.angular.z;
 
   auto command_motor_left =
-      (forward_speed - angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) /
-      WHEEL_RADIUS;
+      std::min(std::max((forward_speed - angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) /
+      WHEEL_RADIUS, -MAX_WHEEL_SPEED), MAX_WHEEL_SPEED);
   auto command_motor_right =
-      (forward_speed + angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) /
-      WHEEL_RADIUS;
+      std::min(std::max((forward_speed + angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) /
+      WHEEL_RADIUS, -MAX_WHEEL_SPEED), MAX_WHEEL_SPEED);
 
   set_velocity(left_side, command_motor_left);
   set_velocity(right_side, command_motor_right);
