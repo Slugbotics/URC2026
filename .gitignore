@@ -12,9 +12,6 @@ venv/
 *.rviz
 *.db
 *.sqlite3
-*.msg
-*.srv
-*.action
 *.idl
 
 # Editor/IDE specific files (e.g., VS Code)
