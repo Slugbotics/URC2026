@@ -33,7 +33,7 @@ void ObstacleAvoider::rightSensorCallback(
 
   if (left_sensor_value < 0.9 * MAX_RANGE ||
       right_sensor_value < 0.9 * MAX_RANGE) {
-    command_message->angular.z = -2.0;
+    command_message->angular.z = -M_PI / 6;
   }
 
   publisher_->publish(std::move(command_message));

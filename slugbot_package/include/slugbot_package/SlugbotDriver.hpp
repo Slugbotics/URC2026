@@ -31,6 +31,9 @@ private:
 
   WbDeviceTag left_motors[3];
   WbDeviceTag *left_side;
+
+  WbDeviceTag turn_motors[4];
+
   // distance sensors for debugging
   WbDeviceTag ds_left;
   WbDeviceTag ds_right;

@@ -15,7 +15,7 @@
 #define MAX_WHEEL_SPEED 25.0
 #define MAX_LINEAR_SPEED (MAX_WHEEL_SPEED * WHEEL_RADIUS)
 // The actual max angular speed is 2 times this, but that breaks the simulator physics
-#define MAX_ANGULAR_SPEED (MAX_LINEAR_SPEED / HALF_DISTANCE_BETWEEN_WHEELS / 2)
+#define MAX_TURN_ANGLE (M_PI / 6)
 
 void set_position(WbDeviceTag *side, float value);
 void set_velocity(WbDeviceTag *side, float value);
@@ -35,6 +35,11 @@ void SlugbotDriver::init(
   right_motors[2] = wb_robot_get_device("BackRightWheel");
   right_side = right_motors;
 
+  turn_motors[0] = wb_robot_get_device("FrontLeftArm");
+  turn_motors[1] = wb_robot_get_device("FrontRightArm");
+  turn_motors[2] = wb_robot_get_device("BackLeftArm");
+  turn_motors[3] = wb_robot_get_device("BackRightArm");
+
   set_position(left_side, INFINITY);
   set_position(right_side, INFINITY);
 
@@ -53,7 +58,7 @@ void SlugbotDriver::init(
       "/controller_input", rclcpp::SensorDataQoS().reliable(),
       [this](const messages::msg::ControllerInput::SharedPtr msg){
         this->cmd_vel_msg_input.linear.x = -MAX_LINEAR_SPEED * msg->left_y * std::abs(msg->left_y);
-        this->cmd_vel_msg_input.angular.z = MAX_ANGULAR_SPEED * msg->right_x * std::abs(msg->right_x);
+        this->cmd_vel_msg_input.angular.z = MAX_TURN_ANGLE * msg->right_x * std::abs(msg->right_x);
         this->recieved_input = true;
       }
   );
@@ -103,25 +108,29 @@ void SlugbotDriver::step() {
       cmd_vel_msg_input.linear.x += -MAX_LINEAR_SPEED;
     }
     if (a && cmd_vel_msg_avoid.angular.z == 0.0) {
-      cmd_vel_msg_input.angular.z = -MAX_ANGULAR_SPEED;
+      cmd_vel_msg_input.angular.z = -MAX_TURN_ANGLE;
     }
     if (d && cmd_vel_msg_avoid.angular.z == 0.0) {
-      cmd_vel_msg_input.angular.z = MAX_ANGULAR_SPEED;
+      cmd_vel_msg_input.angular.z = MAX_TURN_ANGLE;
     }
   }
 
   auto forward_speed = cmd_vel_msg_avoid.linear.x + cmd_vel_msg_input.linear.x;
-  auto angular_speed = cmd_vel_msg_avoid.angular.z + cmd_vel_msg_input.angular.z;
+  auto angle = (cmd_vel_msg_avoid.angular.z + cmd_vel_msg_input.angular.z);
 
   auto command_motor_left =
-      std::min(std::max((forward_speed - angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) /
+      std::min(std::max((forward_speed) /
       WHEEL_RADIUS, -MAX_WHEEL_SPEED), MAX_WHEEL_SPEED);
   auto command_motor_right =
-      std::min(std::max((forward_speed + angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) /
+      std::min(std::max((forward_speed) /
       WHEEL_RADIUS, -MAX_WHEEL_SPEED), MAX_WHEEL_SPEED);
 
   set_velocity(left_side, command_motor_left);
   set_velocity(right_side, command_motor_right);
+
+  for(int i = 0; i < 4; i++) {
+    wb_motor_set_position(turn_motors[i], i < 2 ? angle : -angle);
+  }
 }
 } // namespace slugbot_driver
 
