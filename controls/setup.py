@@ -11,7 +11,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'pygame'],
     zip_safe=True,
     maintainer='UCSC MATE Team',
     maintainer_email='slugbotics@ucsc.edu',
