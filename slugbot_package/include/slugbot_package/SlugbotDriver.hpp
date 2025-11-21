@@ -1,43 +1,31 @@
-#ifndef WEBOTS_ROS2_PLUGIN_EXAMPLE_HPP
-#define WEBOTS_ROS2_PLUGIN_EXAMPLE_HPP
+#ifndef SLUGBOT_DRIVER_HPP
+#define SLUGBOT_DRIVER_HPP
 
-#include "rclcpp/macros.hpp"
-#include "webots_ros2_driver/PluginInterface.hpp"
-#include "webots_ros2_driver/WebotsNode.hpp"
-
+#include "std_msgs/msg/float64.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "messages/msg/controller_input.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/msg/range.hpp"
 
-namespace slugbot_driver {
-class SlugbotDriver : public webots_ros2_driver::PluginInterface {
+#include "rclcpp/rclcpp.hpp"
+
+class SlugbotDriver : public rclcpp::Node {
 public:
-  void step() override;
-  void init(webots_ros2_driver::WebotsNode *node,
-            std::unordered_map<std::string, std::string> &parameters) override;
+  explicit SlugbotDriver();
+  void update();
 
 private:
-
-  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr
-      cmd_vel_subscription_avoid_;
-  rclcpp::Subscription<messages::msg::ControllerInput>::SharedPtr
-      controller_subscription;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr left_wheel_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr right_wheel_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr turn_angle_publisher;
+  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr keyboard_subscription;
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_subscription_avoid;
+  rclcpp::Subscription<messages::msg::ControllerInput>::SharedPtr controller_subscription;
   geometry_msgs::msg::Twist cmd_vel_msg_avoid;
-  geometry_msgs::msg::Twist cmd_vel_msg_input;
+  std::string keys_pressed;
+  messages::msg::ControllerInput controller_input;
+  rclcpp::TimerBase::SharedPtr timer;
   bool recieved_input = false;
-
-  WbDeviceTag right_motors[3];
-  WbDeviceTag *right_side;
-
-  WbDeviceTag left_motors[3];
-  WbDeviceTag *left_side;
-
-  WbDeviceTag turn_motors[4];
-
-  // distance sensors for debugging
-  WbDeviceTag ds_left;
-  WbDeviceTag ds_right;
-  int time_step_ms = 0;
 };
-} // namespace slugbot_driver
 #endif

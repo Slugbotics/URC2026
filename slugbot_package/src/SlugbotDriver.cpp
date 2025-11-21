@@ -1,153 +1,104 @@
 #include "slugbot_package/SlugbotDriver.hpp"
 
 #include "rclcpp/rclcpp.hpp"
-#include <cstdio>
-#include <functional>
+#include <algorithm>
 #include <cmath>
-#include <webots/motor.h>
-#include <webots/robot.h>
-#include <webots/keyboard.h>
+#include "std_msgs/msg/float64.hpp"
+#include "std_msgs/msg/string.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include "messages/msg/controller_input.hpp"
 
 #define HALF_DISTANCE_BETWEEN_WHEELS 0.24
 #define WHEEL_RADIUS 0.06
-#define WHEEL_COUNT 6
-#define IGNORE_AVOID_MESSAGE true
 #define MAX_WHEEL_SPEED 25.0
 #define MAX_LINEAR_SPEED (MAX_WHEEL_SPEED * WHEEL_RADIUS)
-// The actual max angular speed is 2 times this, but that breaks the simulator physics
 #define MAX_TURN_ANGLE (M_PI / 6)
+#define IGNORE_AVOID_MESSAGE true
 
-void set_position(WbDeviceTag *side, float value);
-void set_velocity(WbDeviceTag *side, float value);
+SlugbotDriver::SlugbotDriver()
+    : Node("slugbot_driver") {
+  left_wheel_publisher = this->create_publisher<std_msgs::msg::Float64>("/left_wheel", 10);
+  right_wheel_publisher = this->create_publisher<std_msgs::msg::Float64>("/right_wheel", 10);
+  turn_angle_publisher = this->create_publisher<std_msgs::msg::Float64>("/turn_angle", 10);
 
-namespace slugbot_driver {
-void SlugbotDriver::init(
-    webots_ros2_driver::WebotsNode *node,
-    std::unordered_map<std::string, std::string> &parameters) {
-
-  left_motors[0] = wb_robot_get_device("FrontLeftWheel");
-  left_motors[1] = wb_robot_get_device("MiddleLeftWheel");
-  left_motors[2] = wb_robot_get_device("BackLeftWheel");
-  left_side = left_motors;
-
-  right_motors[0] = wb_robot_get_device("FrontRightWheel");
-  right_motors[1] = wb_robot_get_device("MiddleRightWheel");
-  right_motors[2] = wb_robot_get_device("BackRightWheel");
-  right_side = right_motors;
-
-  turn_motors[0] = wb_robot_get_device("FrontLeftArm");
-  turn_motors[1] = wb_robot_get_device("FrontRightArm");
-  turn_motors[2] = wb_robot_get_device("BackLeftArm");
-  turn_motors[3] = wb_robot_get_device("BackRightArm");
-
-  set_position(left_side, INFINITY);
-  set_position(right_side, INFINITY);
-
-  set_velocity(left_side, 0);
-  set_velocity(right_side, 0);
-
-  cmd_vel_subscription_avoid_ = node->create_subscription<geometry_msgs::msg::Twist>(
-      "/cmd_vel_avoid", rclcpp::SensorDataQoS().reliable(),
+  cmd_vel_subscription_avoid = this->create_subscription<geometry_msgs::msg::Twist>(
+      "/cmd_vel_avoid", 10,
       [this](const geometry_msgs::msg::Twist::SharedPtr msg){
-        this->cmd_vel_msg_avoid.linear = msg->linear;
-        this->cmd_vel_msg_avoid.angular = msg->angular;
+        this->cmd_vel_msg_avoid = *msg;
       }
   );
 
-  controller_subscription = node->create_subscription<messages::msg::ControllerInput>(
-      "/controller_input", rclcpp::SensorDataQoS().reliable(),
+  controller_subscription = this->create_subscription<messages::msg::ControllerInput>(
+      "/controller_input", 10,
       [this](const messages::msg::ControllerInput::SharedPtr msg){
-        this->cmd_vel_msg_input.linear.x = -MAX_LINEAR_SPEED * msg->left_y * std::abs(msg->left_y);
-        this->cmd_vel_msg_input.angular.z = MAX_TURN_ANGLE * msg->right_x * std::abs(msg->right_x);
+        this->controller_input = *msg;
         this->recieved_input = true;
       }
   );
 
-  time_step_ms = static_cast<int>(wb_robot_get_basic_time_step());
-  wb_keyboard_enable(time_step_ms);
-}
-
-void SlugbotDriver::step() {
-  if(!recieved_input) {
-    int key;
-    bool w=false, a=false, s=false, d=false;
-    while((key = wb_keyboard_get_key()) != -1) {
-      switch (key) {
-        case 'W':
-        case 'w':
-        case WB_KEYBOARD_UP:
-          w = true;
-          break;
-        case 'S':
-        case 's':
-        case WB_KEYBOARD_DOWN:
-          s = true;
-          break;
-        case 'A':
-        case 'a':
-        case WB_KEYBOARD_LEFT:
-          a = true;
-          break;
-        case 'D':
-        case 'd':
-        case WB_KEYBOARD_RIGHT:
-          d = true;
-          break;
+  keyboard_subscription = this->create_subscription<std_msgs::msg::String>(
+      "/keyboard", 10,
+      [this](const std_msgs::msg::String::SharedPtr msg){
+        this->keys_pressed = msg->data;
       }
-    }
-    cmd_vel_msg_input.linear.x = 0.0;
-    cmd_vel_msg_input.angular.z = 0.0;
-    if (IGNORE_AVOID_MESSAGE) {
-      cmd_vel_msg_avoid.linear.x = 0.0;
-      cmd_vel_msg_avoid.angular.z = 0.0;
-    }
-    if (w) {
-      cmd_vel_msg_input.linear.x = MAX_LINEAR_SPEED;
-    }
-    if (s) {
-      cmd_vel_msg_input.linear.x += -MAX_LINEAR_SPEED;
-    }
-    if (a && cmd_vel_msg_avoid.angular.z == 0.0) {
-      cmd_vel_msg_input.angular.z = -MAX_TURN_ANGLE;
-    }
-    if (d && cmd_vel_msg_avoid.angular.z == 0.0) {
-      cmd_vel_msg_input.angular.z = MAX_TURN_ANGLE;
-    }
-  }
+  );
 
-  auto forward_speed = cmd_vel_msg_avoid.linear.x + cmd_vel_msg_input.linear.x;
-  auto angle = (cmd_vel_msg_avoid.angular.z + cmd_vel_msg_input.angular.z);
-
-  auto command_motor_left =
-      std::min(std::max((forward_speed) /
-      WHEEL_RADIUS, -MAX_WHEEL_SPEED), MAX_WHEEL_SPEED);
-  auto command_motor_right =
-      std::min(std::max((forward_speed) /
-      WHEEL_RADIUS, -MAX_WHEEL_SPEED), MAX_WHEEL_SPEED);
-
-  set_velocity(left_side, command_motor_left);
-  set_velocity(right_side, command_motor_right);
-
-  for(int i = 0; i < 4; i++) {
-    wb_motor_set_position(turn_motors[i], i < 2 ? angle : -angle);
-  }
-}
-} // namespace slugbot_driver
-
-void set_position(WbDeviceTag *side, float value) {
-  for (int i = 0; i < WHEEL_COUNT>>1; i++) {
-    wb_motor_set_position(*side, value);
-    side++;
-  }
+  // Run at 50Hz
+  timer = this->create_wall_timer(std::chrono::milliseconds(20),
+    std::bind(&SlugbotDriver::update, this));
 }
 
-void set_velocity(WbDeviceTag *side, float value) {
-  for (int i = 0; i < WHEEL_COUNT>>1; i++) {
-    wb_motor_set_velocity(*side, value);
-    side++;
+void SlugbotDriver::update() {
+  double speed = 0;
+  double angle = 0;
+
+  if (recieved_input) {
+    double ly = controller_input.left_y;
+    double rx = controller_input.right_x;
+    speed = -MAX_LINEAR_SPEED * ly * std::abs(ly);
+    angle = MAX_TURN_ANGLE * rx * std::abs(rx);
+  } else {
+    if (keys_pressed.find('w') != std::string::npos){
+      speed = MAX_LINEAR_SPEED;
+    }
+    if (keys_pressed.find('s') != std::string::npos){
+      speed -= MAX_LINEAR_SPEED;
+    }
+    if (keys_pressed.find('a') != std::string::npos){
+      angle = -MAX_TURN_ANGLE;
+    }
+    if (keys_pressed.find('d') != std::string::npos){
+      angle += MAX_TURN_ANGLE;
+    }
   }
+
+  if (IGNORE_AVOID_MESSAGE) {
+    cmd_vel_msg_avoid.linear.x = 0.0;
+    cmd_vel_msg_avoid.angular.z = 0.0;
+  }
+
+  speed += cmd_vel_msg_avoid.linear.x;
+  angle += cmd_vel_msg_avoid.angular.z;
+
+  double wheelSpeed = std::clamp(speed / WHEEL_RADIUS, -MAX_WHEEL_SPEED, MAX_WHEEL_SPEED);
+
+  auto left_msg = std::make_unique<std_msgs::msg::Float64>();
+  left_msg->data = wheelSpeed;
+  left_wheel_publisher->publish(std::move(left_msg));
+
+  auto right_msg = std::make_unique<std_msgs::msg::Float64>();
+  right_msg->data = wheelSpeed;
+  right_wheel_publisher->publish(std::move(right_msg));
+
+  auto turn_msg = std::make_unique<std_msgs::msg::Float64>();
+  turn_msg->data = angle;
+  turn_angle_publisher->publish(std::move(turn_msg));
 }
 
-#include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(slugbot_driver::SlugbotDriver,
-                       webots_ros2_driver::PluginInterface)
+int main(int argc, char **argv) {
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<SlugbotDriver>();
+  rclcpp::spin(node);
+  rclcpp::shutdown();
+  return 0;
+}

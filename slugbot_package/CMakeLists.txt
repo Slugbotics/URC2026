@@ -10,6 +10,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(webots_ros2_driver REQUIRED)
 find_package(messages REQUIRED)
@@ -38,11 +39,11 @@ install(
   DESTINATION include
 )
 
-# SlugbotDriver library
+# Build the Simulation plugin as a shared library (pluginlib)
 add_library(
   ${PROJECT_NAME}
   SHARED
-  src/SlugbotDriver.cpp
+  src/Simulation.cpp
 )
 target_include_directories(
   ${PROJECT_NAME}
@@ -54,13 +55,27 @@ ament_target_dependencies(
   pluginlib
   rclcpp
   webots_ros2_driver
-  messages
+  std_msgs
 )
 install(TARGETS
   ${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
+)
+
+# SlugbotDriver node executable
+add_executable(slugbot_driver_node src/SlugbotDriver.cpp)
+ament_target_dependencies(slugbot_driver_node
+  rclcpp
+  std_msgs
+  geometry_msgs
+  messages
+  sensor_msgs
+)
+install(TARGETS
+  slugbot_driver_node
+  DESTINATION lib/${PROJECT_NAME}
 )
 # Install additional directories.
 install(DIRECTORY
