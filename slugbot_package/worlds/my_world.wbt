@@ -1,0 +1,101 @@
+#VRML_SIM R2022b utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/floors/protos/UnevenTerrain.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/appearances/protos/SandyGround.proto"
+EXTERNPROTO "../protos/SlugRobot.proto"
+
+WorldInfo {
+}
+Viewpoint {
+  position -2 0 3.7
+  orientation 0 1 0 0.2
+  follow "slugbot"
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+
+DirectionalLight {
+  direction -0.5 -1 -0.3
+  color 1 0.95 0.85
+  intensity 1.0
+  castShadows TRUE
+}
+
+UnevenTerrain {
+  translation 0 0 0
+  rotation 0 0 1 0
+  name "desert_terrain"
+  # larger, taller terrain:
+  # - larger horizontal area so the robot can traverse dunes
+  # - vertical size (z) increased to 6.0 m for taller hills
+  # - grid resolution increased so spacing remains reasonable (~0.2 m)
+  size 60 60 6.0
+  # resolution such that spacing ~= 60 / 299 ~= 0.201 m
+  xDimension 300
+  yDimension 300
+  randomSeed 456
+  perlinNOctaves 8
+  flatCenter FALSE
+  # use SandyGround appearance with tighter texture scaling for a better sand look
+  appearance SandyGround {
+    textureTransform TextureTransform { scale 10 10 }
+  }
+}
+
+# perimeter walls to keep the robot inside the terrain
+# terrain half-extent = 30.0; walls placed slightly outside at +/-30.5
+# wall thickness (y or x) = 0.5, wall height = 8.0
+
+Solid {
+  translation 0 30.5 4.0
+  children [
+    Shape {
+      geometry Box { size 61 1 8.0 }
+      appearance Appearance { material Material { diffuseColor 0.60 0.60 0.60 } }
+    }
+  ]
+  boundingObject Box { size 61 1 8.0 }
+}
+
+Solid {
+  translation 0 -30.5 4.0
+  children [
+    Shape {
+      geometry Box { size 61 1 8.0 }
+      appearance Appearance { material Material { diffuseColor 0.60 0.60 0.60 } }
+    }
+  ]
+  boundingObject Box { size 61 1 8.0 }
+}
+
+Solid {
+  translation 30.5 0 4.0
+  children [
+    Shape {
+      geometry Box { size 1 61 8.0 }
+      appearance Appearance { material Material { diffuseColor 0.60 0.60 0.60 } }
+    }
+  ]
+  boundingObject Box { size 1 61 8.0 }
+}
+
+Solid {
+  translation -30.5 0 4.0
+  children [
+    Shape {
+      geometry Box { size 1 61 8.0 }
+      appearance Appearance { material Material { diffuseColor 0.60 0.60 0.60 } }
+    }
+  ]
+  boundingObject Box { size 1 61 8.0 }
+}
+
+DEF SLUG_BOT SlugRobot {
+  translation 0 0 3.2
+  controller "<extern>"
+  name "slugbot"
+}
