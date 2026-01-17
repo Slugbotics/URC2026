@@ -84,7 +84,7 @@ void SlugbotDriver::update() {
 
   speed += cmd_vel_msg_avoid.linear.x;
   speed = std::clamp(speed, -MAX_LINEAR_SPEED, MAX_LINEAR_SPEED);
-  double max_angular_speed = speed / (HALF_DISTANCE_BETWEEN_WHEELS + FORWARD_DISTANCE_BETWEEN_WHEELS/std::tan(MAX_TURN_ANGLE));
+  double max_angular_speed = std::abs(speed) / (HALF_DISTANCE_BETWEEN_WHEELS + FORWARD_DISTANCE_BETWEEN_WHEELS/std::tan(MAX_TURN_ANGLE));
   angle *= max_angular_speed;
   angle += cmd_vel_msg_avoid.angular.z;
   angle = std::clamp(angle, -max_angular_speed, max_angular_speed);
