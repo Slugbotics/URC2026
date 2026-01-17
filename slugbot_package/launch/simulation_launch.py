@@ -1,5 +1,3 @@
-# TODO: Add a separate launch file for the real robot
-
 import os
 import shutil
 import launch

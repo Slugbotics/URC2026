@@ -1,11 +1,8 @@
 #include "slugbot_package/Simulation.hpp"
 
-#include "slugbot_package/Simulation.hpp"
-
 #include "rclcpp/rclcpp.hpp"
-#include <cstdio>
-#include <functional>
-#include <cmath>
+#include <string>
+#include <cctype>
 #include <webots/motor.h>
 #include <webots/robot.h>
 #include <webots/keyboard.h>
@@ -16,7 +13,6 @@
 #define WHEEL_COUNT 6
 
 void set_position(WbDeviceTag *side, float value);
-void set_velocity(WbDeviceTag *side, float value);
 
 namespace slugbot_driver {
 void Simulation::init(
@@ -41,28 +37,48 @@ void Simulation::init(
   set_position(left_side, INFINITY);
   set_position(right_side, INFINITY);
 
-  set_velocity(left_side, 0);
-  set_velocity(right_side, 0);
+  for (int i = 0; i < WHEEL_COUNT>>1; i++) {
+    wb_motor_set_velocity(left_motors[i], 0);
+    wb_motor_set_velocity(right_motors[i], 0);
+  }
 
   // subscribe to wheel/turn commands published by the logic node
-  left_wheel_subscription = node->create_subscription<std_msgs::msg::Float64>(
-      "/left_wheel", rclcpp::SensorDataQoS().reliable(),
+  front_left_wheel_subscription = node->create_subscription<std_msgs::msg::Float64>(
+      "/front_left_wheel", rclcpp::SensorDataQoS().reliable(),
       [this](const std_msgs::msg::Float64::SharedPtr msg){
-        this->left_wheel_speed_msg = msg->data;
+        this->front_left_wheel_speed_msg = msg->data;
+      }
+  );
+  front_right_wheel_subscription = node->create_subscription<std_msgs::msg::Float64>(
+      "/front_right_wheel", rclcpp::SensorDataQoS().reliable(),
+      [this](const std_msgs::msg::Float64::SharedPtr msg){
+        this->front_right_wheel_speed_msg = msg->data;
       }
   );
 
-  right_wheel_subscription = node->create_subscription<std_msgs::msg::Float64>(
-      "/right_wheel", rclcpp::SensorDataQoS().reliable(),
+  back_left_wheel_subscription = node->create_subscription<std_msgs::msg::Float64>(
+      "/back_left_wheel", rclcpp::SensorDataQoS().reliable(),
       [this](const std_msgs::msg::Float64::SharedPtr msg){
-        this->right_wheel_speed_msg = msg->data;
+        this->back_left_wheel_speed_msg = msg->data;
+      }
+  );
+  back_right_wheel_subscription = node->create_subscription<std_msgs::msg::Float64>(
+      "/back_right_wheel", rclcpp::SensorDataQoS().reliable(),
+      [this](const std_msgs::msg::Float64::SharedPtr msg){
+        this->back_right_wheel_speed_msg = msg->data;
       }
   );
 
-  turn_angle_subscription = node->create_subscription<std_msgs::msg::Float64>(
-      "/turn_angle", rclcpp::SensorDataQoS().reliable(),
+  left_turn_angle_subscription = node->create_subscription<std_msgs::msg::Float64>(
+      "/left_turn_angle", rclcpp::SensorDataQoS().reliable(),
       [this](const std_msgs::msg::Float64::SharedPtr msg){
-        this->turn_angle_msg = msg->data;
+        this->left_turn_angle_msg = msg->data;
+      }
+  );
+  right_turn_angle_subscription = node->create_subscription<std_msgs::msg::Float64>(
+      "/right_turn_angle", rclcpp::SensorDataQoS().reliable(),
+      [this](const std_msgs::msg::Float64::SharedPtr msg){
+        this->right_turn_angle_msg = msg->data;
       }
   );
 
@@ -101,31 +117,24 @@ void Simulation::step() {
   msg->data = keys;
   keyboard_publisher->publish(std::move(msg));
 
-  // Set speeds and angles
-  set_velocity(left_side, left_wheel_speed_msg);
-  set_velocity(right_side, right_wheel_speed_msg);
   // Manually set all 6 speeds
-  for (int i = 0; i < 3; i++) {
-    wb_motor_set_velocity(left_motors[i], left_wheel_speed_msg);
-    wb_motor_set_velocity(right_motors[i], right_wheel_speed_msg);
+  for (int i = 0; i < 3; i += 2) {
+    wb_motor_set_velocity(left_motors[i], front_left_wheel_speed_msg);
+    wb_motor_set_velocity(right_motors[i], front_right_wheel_speed_msg);
   }
+  wb_motor_set_velocity(left_motors[1], back_left_wheel_speed_msg);
+  wb_motor_set_velocity(right_motors[1], back_right_wheel_speed_msg);
 
-  for(int i = 0; i < 4; i++) {
-    wb_motor_set_position(turn_motors[i], i < 2 ? turn_angle_msg : -turn_angle_msg);
-  }
+  wb_motor_set_position(turn_motors[0], left_turn_angle_msg);
+  wb_motor_set_position(turn_motors[1], right_turn_angle_msg);
+  wb_motor_set_position(turn_motors[2], -left_turn_angle_msg);
+  wb_motor_set_position(turn_motors[3], -right_turn_angle_msg);
 }
 } // namespace slugbot_driver
 
 void set_position(WbDeviceTag *side, float value) {
   for (int i = 0; i < WHEEL_COUNT>>1; i++) {
     wb_motor_set_position(*side, value);
-    side++;
-  }
-}
-
-void set_velocity(WbDeviceTag *side, float value) {
-  for (int i = 0; i < WHEEL_COUNT>>1; i++) {
-    wb_motor_set_velocity(*side, value);
     side++;
   }
 }

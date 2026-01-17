@@ -77,6 +77,16 @@ install(TARGETS
   slugbot_driver_node
   DESTINATION lib/${PROJECT_NAME}
 )
+
+add_executable(drivetrain_node src/Drivetrain.cpp)
+ament_target_dependencies(drivetrain_node
+  rclcpp
+  std_msgs
+)
+install(TARGETS
+  drivetrain_node
+  DESTINATION lib/${PROJECT_NAME}
+)
 # Install additional directories.
 install(DIRECTORY
   launch
