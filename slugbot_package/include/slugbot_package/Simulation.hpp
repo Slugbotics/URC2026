@@ -8,8 +8,8 @@
 #include "webots_ros2_driver/PluginInterface.hpp"
 #include "webots_ros2_driver/WebotsNode.hpp"
 
-#include "std_msgs/msg/float64.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "messages/msg/wheel_states.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <webots/robot.h>
 
@@ -21,32 +21,15 @@ public:
             std::unordered_map<std::string, std::string> &parameters) override;
 
 private:
-  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr front_left_wheel_subscription;
-  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr front_right_wheel_subscription;
-  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr back_left_wheel_subscription;
-  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr back_right_wheel_subscription;
-
-  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr left_turn_angle_subscription;
-  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr right_turn_angle_subscription;
+  rclcpp::Subscription<messages::msg::WheelStates>::SharedPtr wheel_states_subscription;
 
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr keyboard_publisher;
 
-  double front_left_wheel_speed_msg = 0.0;
-  double front_right_wheel_speed_msg = 0.0;
-  double back_left_wheel_speed_msg = 0.0;
-  double back_right_wheel_speed_msg = 0.0;
-
-  double left_turn_angle_msg = 0.0;
-  double right_turn_angle_msg = 0.0;
+  messages::msg::WheelStates wheel_states_msg;
 
   std::string keys_pressed;
 
-  WbDeviceTag right_motors[3];
-  WbDeviceTag *right_side = nullptr;
-
-  WbDeviceTag left_motors[3];
-  WbDeviceTag *left_side = nullptr;
-
+  WbDeviceTag motors[4];
   WbDeviceTag turn_motors[4];
 
   // distance sensors for debugging (optional)
