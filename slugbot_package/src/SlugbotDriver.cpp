@@ -13,7 +13,7 @@ const double TRACK_LENGTH = 0.6;
 const double WHEEL_RADIUS = 0.06;
 const double MAX_WHEEL_SPEED = 25.0;
 const double MAX_LINEAR_SPEED = (MAX_WHEEL_SPEED * WHEEL_RADIUS);
-const double MAX_ROTATIONAL_SPEED = 0.2 * (MAX_LINEAR_SPEED / ((std::hypot(TRACK_WIDTH, TRACK_LENGTH) / 2)));
+const double MAX_ROTATIONAL_SPEED = (MAX_LINEAR_SPEED / ((std::hypot(TRACK_WIDTH, TRACK_LENGTH) / 2)));
 
 SlugbotDriver::SlugbotDriver()
     : Node("slugbot_driver") {
@@ -63,10 +63,10 @@ void SlugbotDriver::update() {
       x -= 1;
     }
     if (keys_pressed.find('a') != std::string::npos){
-      y = 1;
+      y = 0.5;
     }
     if (keys_pressed.find('d') != std::string::npos){
-      y -= 1;
+      y -= 0.5;
     }
     if (keys_pressed.find('q') != std::string::npos){
       rotation = MAX_ROTATIONAL_SPEED;
