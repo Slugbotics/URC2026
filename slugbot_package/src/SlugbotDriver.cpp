@@ -8,12 +8,12 @@
 #include "../../utils/math/Translation2d.hpp"
 #include "../../utils/math/Rotation2d.hpp"
 
-const double TRACK_WIDTH = 0.5;
-const double TRACK_LENGTH = 0.6;
-const double WHEEL_RADIUS = 0.06;
-const double MAX_WHEEL_SPEED = 25.0;
-const double MAX_LINEAR_SPEED = (MAX_WHEEL_SPEED * WHEEL_RADIUS);
-const double MAX_ROTATIONAL_SPEED = (MAX_LINEAR_SPEED / ((std::hypot(TRACK_WIDTH, TRACK_LENGTH) / 2)));
+const double TRACK_WIDTH = 0.5; // Meters
+const double TRACK_LENGTH = 0.6; // Meters
+const double WHEEL_RADIUS = 0.06; // Meters
+const double MAX_WHEEL_SPEED = 25.0; // Radians per second
+const double MAX_LINEAR_SPEED = (MAX_WHEEL_SPEED * WHEEL_RADIUS); // Meters per second
+const double MAX_ROTATIONAL_SPEED = (MAX_LINEAR_SPEED / ((std::hypot(TRACK_WIDTH, TRACK_LENGTH) / 2))); // Radians per second
 
 SlugbotDriver::SlugbotDriver()
     : Node("slugbot_driver") {
@@ -55,6 +55,7 @@ void SlugbotDriver::update() {
                            -lx * std::hypot(lx, ly) * MAX_LINEAR_SPEED);
     rotation = -rx * std::abs(rx) * MAX_ROTATIONAL_SPEED;
   } else {
+    // Percent speed, -1 to 1
     double x = 0, y = 0;
     if (keys_pressed.find('w') != std::string::npos){
       x = 1;
@@ -63,16 +64,16 @@ void SlugbotDriver::update() {
       x -= 1;
     }
     if (keys_pressed.find('a') != std::string::npos){
-      y = 0.5;
+      y = 1;
     }
     if (keys_pressed.find('d') != std::string::npos){
-      y -= 0.5;
+      y -= 1;
     }
     if (keys_pressed.find('q') != std::string::npos){
-      rotation = MAX_ROTATIONAL_SPEED;
+      rotation = MAX_ROTATIONAL_SPEED / 2;
     }
     if (keys_pressed.find('e') != std::string::npos){
-      rotation -= MAX_ROTATIONAL_SPEED;
+      rotation -= MAX_ROTATIONAL_SPEED / 2;
     }
     speeds = Translation2d(x, y).normalized() * MAX_LINEAR_SPEED;
   }

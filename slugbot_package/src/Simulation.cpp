@@ -13,8 +13,6 @@
 #define WHEEL_RADIUS 0.06
 #define WHEEL_COUNT 4
 
-void set_position(WbDeviceTag *side, float value);
-
 namespace slugbot_driver {
 void Simulation::init(
     webots_ros2_driver::WebotsNode *node,
@@ -92,12 +90,6 @@ void Simulation::step() {
   }
 }
 } // namespace slugbot_driver
-
-void set_position(WbDeviceTag *side, float value) {
-  for (int i = 0; i < 4; i++) {
-    wb_motor_set_position(*side, value);
-  }
-}
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(slugbot_driver::Simulation,
