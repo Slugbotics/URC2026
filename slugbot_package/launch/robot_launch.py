@@ -7,11 +7,6 @@ from launch.actions import ExecuteProcess
 from ament_index_python.packages import get_package_share_directory, get_package_prefix
 
 def generate_launch_description():
-    obstacle_avoider = Node(
-        package='slugbot_package',
-        executable='obstacle_avoider',
-    )
-
     slugbot_node = Node(
         package='slugbot_package',
         executable='slugbot_driver_node',
@@ -24,6 +19,5 @@ def generate_launch_description():
 
     return LaunchDescription([
         slugbot_node,
-        obstacle_avoider,
         drivetrain
     ])

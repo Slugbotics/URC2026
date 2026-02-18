@@ -1,27 +1,23 @@
 #include "slugbot_package/SlugbotDriver.hpp"
 
 #include "rclcpp/rclcpp.hpp"
+#include <algorithm>
 #include <cmath>
+#include "std_msgs/msg/float64.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 #include "messages/msg/controller_input.hpp"
-#include "messages/msg/wheel_states.hpp"
-#include "../../utils/math/Translation2d.hpp"
-#include "../../utils/math/Rotation2d.hpp"
 
-const double TRACK_WIDTH = 0.5; // Meters
-const double TRACK_LENGTH = 0.6; // Meters
-const double WHEEL_RADIUS = 0.06; // Meters
-const double MAX_WHEEL_SPEED = 25.0; // Radians per second
-const double MAX_LINEAR_SPEED = (MAX_WHEEL_SPEED * WHEEL_RADIUS); // Meters per second
-const double MAX_ROTATIONAL_SPEED = (MAX_LINEAR_SPEED / ((std::hypot(TRACK_WIDTH, TRACK_LENGTH) / 2))); // Radians per second
+const double WHEEL_RADIUS = 0.06;
+const double MAX_WHEEL_SPEED = 25.0;
+const double MAX_LINEAR_SPEED = (MAX_WHEEL_SPEED * WHEEL_RADIUS);
 
 SlugbotDriver::SlugbotDriver()
     : Node("slugbot_driver") {
-  // Swerve drive
-  wheel_states_publisher = this->create_publisher<messages::msg::WheelStates>("/wheel_states", 10);
+  // This assumes a 4 wheel drive with the front wheels turning, but it will also work with 6 wheels
+  left_wheel_publisher = this->create_publisher<std_msgs::msg::Float64>("/left_wheel", 10);
+  right_wheel_publisher = this->create_publisher<std_msgs::msg::Float64>("/right_wheel", 10);
 
-  current_wheel_states = messages::msg::WheelStates();
-  
   controller_subscription = this->create_subscription<messages::msg::ControllerInput>(
       "/controller_input", 10,
       [this](const messages::msg::ControllerInput::SharedPtr msg){
@@ -43,78 +39,43 @@ SlugbotDriver::SlugbotDriver()
 }
 
 void SlugbotDriver::update() {
-  // Forward, left, and CCW are positive
-  Translation2d speeds = Translation2d();
-  double rotation = 0.0;
+  double speed = 0;
+  double angle = 0;
 
   if (recieved_input) {
-    double lx = controller_input.left_x;
     double ly = controller_input.left_y;
     double rx = controller_input.right_x;
-    speeds = Translation2d(-ly * std::hypot(lx, ly) * MAX_LINEAR_SPEED,
-                           -lx * std::hypot(lx, ly) * MAX_LINEAR_SPEED);
-    rotation = -rx * std::abs(rx) * MAX_ROTATIONAL_SPEED;
+    speed = -MAX_LINEAR_SPEED * ly * std::abs(ly);
+    angle = -rx * std::abs(rx);
   } else {
-    // Percent speed, -1 to 1
-    double x = 0, y = 0;
     if (keys_pressed.find('w') != std::string::npos){
-      x = 1;
+      speed = MAX_LINEAR_SPEED;
     }
     if (keys_pressed.find('s') != std::string::npos){
-      x -= 1;
+      speed -= MAX_LINEAR_SPEED;
     }
     if (keys_pressed.find('a') != std::string::npos){
-      y = 1;
+      angle = 1;
     }
     if (keys_pressed.find('d') != std::string::npos){
-      y -= 1;
-    }
-    if (keys_pressed.find('q') != std::string::npos){
-      rotation = MAX_ROTATIONAL_SPEED / 2;
-    }
-    if (keys_pressed.find('e') != std::string::npos){
-      rotation -= MAX_ROTATIONAL_SPEED / 2;
-    }
-    speeds = Translation2d(x, y).normalized() * MAX_LINEAR_SPEED;
-  }
-
-  Translation2d wheels[4] = {
-    Translation2d(speeds.getX() - rotation * TRACK_WIDTH/2, speeds.getY() + rotation * TRACK_LENGTH/2) / WHEEL_RADIUS,  // Front Left
-    Translation2d(speeds.getX() + rotation * TRACK_WIDTH/2, speeds.getY() + rotation * TRACK_LENGTH/2) / WHEEL_RADIUS,  // Front Right
-    Translation2d(speeds.getX() - rotation * TRACK_WIDTH/2, speeds.getY() - rotation * TRACK_LENGTH/2) / WHEEL_RADIUS,  // Back Left
-    Translation2d(speeds.getX() + rotation * TRACK_WIDTH/2, speeds.getY() - rotation * TRACK_LENGTH/2) / WHEEL_RADIUS   // Back Right
-  };
-  double max_wheel_speed = 0.0;
-  for (int i = 0; i < 4; i++) {
-    double wheel_speed = wheels[i].norm();
-    if (wheel_speed > max_wheel_speed) {
-      max_wheel_speed = wheel_speed;
-    }
-  }
-  if (max_wheel_speed > MAX_WHEEL_SPEED) {
-    for (int i = 0; i < 4; i++) {
-      wheels[i] = wheels[i] * (MAX_WHEEL_SPEED / max_wheel_speed);
+      angle -= 1;
     }
   }
 
-  auto wheel_msg = messages::msg::WheelStates();
-  for(int i = 0; i < 4; i++) {
-    wheel_msg.speeds[i] = wheels[i].norm();
-    wheel_msg.angles[i] = wheels[i].getAngle();
+  angle *= MAX_LINEAR_SPEED;
+  double max_wheel = std::abs(speed) + std::abs(angle);
+  if(max_wheel > MAX_LINEAR_SPEED){
+    speed *= MAX_LINEAR_SPEED / max_wheel;
+    angle *= MAX_LINEAR_SPEED / max_wheel;
   }
-  optimize_wheel_states(wheel_msg);
-  wheel_states_publisher->publish(wheel_msg);
-}
 
-void SlugbotDriver::optimize_wheel_states(messages::msg::WheelStates& wheels) {
-  for(int i = 0; i < 4; i++){
-    double a = Rotation2d(wheels.angles[i] - current_wheel_states.angles[i]).modulus().getRadians();
-    if (std::abs(a) > M_PI / 2){
-      wheels.angles[i] = Rotation2d(wheels.angles[i] + M_PI).modulus().getRadians();
-      wheels.speeds[i] = -wheels.speeds[i];
-    }
-  }
-  current_wheel_states = wheels;
+  auto left_msg = std_msgs::msg::Float64();
+  left_msg.data = speed - angle;
+  left_wheel_publisher->publish(left_msg);
+
+  auto right_msg = std_msgs::msg::Float64();
+  right_msg.data = speed + angle;
+  right_wheel_publisher->publish(right_msg);
 }
 
 int main(int argc, char **argv) {

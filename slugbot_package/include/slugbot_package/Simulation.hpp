@@ -9,7 +9,7 @@
 #include "webots_ros2_driver/WebotsNode.hpp"
 
 #include "std_msgs/msg/string.hpp"
-#include "messages/msg/wheel_states.hpp"
+#include "std_msgs/msg/float64.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <webots/robot.h>
 
@@ -21,11 +21,12 @@ public:
             std::unordered_map<std::string, std::string> &parameters) override;
 
 private:
-  rclcpp::Subscription<messages::msg::WheelStates>::SharedPtr wheel_states_subscription;
-
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr keyboard_publisher;
 
-  messages::msg::WheelStates wheel_states_msg;
+  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr left_wheel_subscription;
+  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr right_wheel_subscription;
+  double left_wheel_speed_msg = 0.0;
+  double right_wheel_speed_msg = 0.0;
 
   std::string keys_pressed;
 

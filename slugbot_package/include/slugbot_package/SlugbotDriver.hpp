@@ -4,8 +4,8 @@
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/float64.hpp"
 #include "messages/msg/controller_input.hpp"
-#include "messages/msg/wheel_states.hpp"
 
 class SlugbotDriver : public rclcpp::Node {
 public:
@@ -13,11 +13,8 @@ public:
   void update();
 
 private:
-  void optimize_wheel_states(messages::msg::WheelStates& wheels);
-
-  messages::msg::WheelStates current_wheel_states;
-
-  rclcpp::Publisher<messages::msg::WheelStates>::SharedPtr wheel_states_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr left_wheel_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr right_wheel_publisher;
 
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr keyboard_subscription;
   rclcpp::Subscription<messages::msg::ControllerInput>::SharedPtr controller_subscription;

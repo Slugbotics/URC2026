@@ -65,11 +65,6 @@ def generate_launch_description():
             ]
         )
 
-    obstacle_avoider = Node(
-        package='slugbot_package',
-        executable='obstacle_avoider',
-    )
-
     slugbot_node = Node(
         package='slugbot_package',
         executable='slugbot_driver_node',
@@ -79,7 +74,6 @@ def generate_launch_description():
         webots,
         slugbot_driver,
         slugbot_node,
-        obstacle_avoider,
         launch.actions.RegisterEventHandler(
             event_handler=launch.event_handlers.OnProcessExit(
                 target_action=webots,

@@ -34,11 +34,17 @@ void Simulation::init(
     wb_motor_set_velocity(motors[i], 0);
   }
 
-  // subscribe to wheel states message
-  wheel_states_subscription = node->create_subscription<messages::msg::WheelStates>(
-      "/wheel_states", rclcpp::SensorDataQoS().reliable(),
-      [this](const messages::msg::WheelStates::SharedPtr msg){
-        this->wheel_states_msg = *msg;
+  // subscribe to wheel states messages
+  left_wheel_subscription = node->create_subscription<std_msgs::msg::Float64>(
+      "/left_wheel", rclcpp::SensorDataQoS().reliable(),
+      [this](const std_msgs::msg::Float64::SharedPtr msg){
+        this->left_wheel_speed_msg = msg->data;
+      }
+  );
+  right_wheel_subscription = node->create_subscription<std_msgs::msg::Float64>(
+      "/right_wheel", rclcpp::SensorDataQoS().reliable(),
+      [this](const std_msgs::msg::Float64::SharedPtr msg){
+        this->right_wheel_speed_msg = msg->data;
       }
   );
 
@@ -79,14 +85,11 @@ void Simulation::step() {
 
   // This simulation is currently only an approximation of swerve
   for(int i = 0; i < 4; i++) {
-    double speed = wheel_states_msg.speeds[i];
-    double angle = wheel_states_msg.angles[i];
-    if(std::abs(angle) > M_PI/2){
-      angle = Rotation2d(angle).invert().getRadians();
-      speed *= -1;
-    }
+    double speed = i % 2 == 0 ? left_wheel_speed_msg : right_wheel_speed_msg;
     wb_motor_set_velocity(motors[i], -speed);
-    wb_motor_set_position(turn_motors[i], angle);
+    double turnAngle = 0;
+    // double turnAngle = i%3 == 0 ? -M_PI/8 : M_PI/8;
+    wb_motor_set_position(turn_motors[i], turnAngle);
   }
 }
 } // namespace slugbot_driver

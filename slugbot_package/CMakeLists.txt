@@ -18,21 +18,8 @@ find_package(messages REQUIRED)
 # Export the plugin configuration file
 pluginlib_export_plugin_description_file(webots_ros2_driver slugbot_driver.xml)
 
-# Obstacle avoider
 include_directories(
   include
-)
-add_executable(obstacle_avoider
-  src/ObstacleAvoider.cpp
-)
-ament_target_dependencies(obstacle_avoider
-  rclcpp
-  geometry_msgs
-  sensor_msgs
-)
-install(TARGETS
-  obstacle_avoider
-  DESTINATION lib/${PROJECT_NAME}
 )
 install(
   DIRECTORY include/
@@ -125,5 +112,4 @@ ament_package()
 # Link geometry library into executables that may use it
 target_link_libraries(slugbot_driver_node slugbot_geometry)
 target_link_libraries(${PROJECT_NAME} slugbot_geometry)
-target_link_libraries(obstacle_avoider slugbot_geometry)
 target_link_libraries(drivetrain_node slugbot_geometry)

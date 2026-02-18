@@ -305,7 +305,7 @@ PROTO SlugRobot [
                             RotationalMotor {
                               name "BackLeftWheel"
                               maxVelocity 25
-                              maxTorque 1.0
+                              maxTorque 20.0
                             }
                           ]
                           endPoint Solid {
@@ -597,7 +597,7 @@ PROTO SlugRobot [
                       RotationalMotor {
                         name "FrontLeftWheel"
                         maxVelocity 25
-                        maxTorque 1.0
+                        maxTorque 20.0
                       }
                     ]
                     endPoint Solid {
@@ -756,7 +756,7 @@ PROTO SlugRobot [
                             RotationalMotor {
                               name "BackRightWheel"
                               maxVelocity 25
-                              maxTorque 1.0
+                              maxTorque 20.0
                             }
                           ]
                           endPoint Solid {
@@ -1022,7 +1022,7 @@ PROTO SlugRobot [
                       RotationalMotor {
                         name "FrontRightWheel"
                         maxVelocity 25
-                        maxTorque 1.0
+                        maxTorque 20.0
                       }
                     ]
                     endPoint Solid {
