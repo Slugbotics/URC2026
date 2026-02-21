@@ -22,7 +22,7 @@ private:
   messages::msg::ControllerInput controller_input;
 
   rclcpp::TimerBase::SharedPtr timer;
-  bool recieved_input = false;
+  bool received_input = false;
 };
 
 #endif

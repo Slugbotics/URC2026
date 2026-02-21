@@ -22,7 +22,7 @@ SlugbotDriver::SlugbotDriver()
       "/controller_input", 10,
       [this](const messages::msg::ControllerInput::SharedPtr msg){
         this->controller_input = *msg;
-        this->recieved_input = true;
+        this->received_input = true;
       }
   );
 
@@ -33,7 +33,7 @@ SlugbotDriver::SlugbotDriver()
       }
   );
 
-  // Run at 50Hz
+  // Run this::update at 50Hz open loop
   timer = this->create_wall_timer(std::chrono::milliseconds(20),
     std::bind(&SlugbotDriver::update, this));
 }
@@ -42,9 +42,15 @@ void SlugbotDriver::update() {
   double speed = 0;
   double angle = 0;
 
-  if (recieved_input) {
+  if (received_input) {
+    // lx/ry is on (-1,1)
     double ly = controller_input.left_y;
     double rx = controller_input.right_x;
+    
+    // equivalent to squaring the value (rx\ly) 
+    // and then flipping the sign of the output
+    // the speed one is then scaled by our max
+    // this allows for more precision most of the time
     speed = -MAX_LINEAR_SPEED * ly * std::abs(ly);
     angle = -rx * std::abs(rx);
   } else {
@@ -64,6 +70,8 @@ void SlugbotDriver::update() {
 
   angle *= MAX_LINEAR_SPEED;
   double max_wheel = std::abs(speed) + std::abs(angle);
+  
+  // clamp
   if(max_wheel > MAX_LINEAR_SPEED){
     speed *= MAX_LINEAR_SPEED / max_wheel;
     angle *= MAX_LINEAR_SPEED / max_wheel;
@@ -80,8 +88,12 @@ void SlugbotDriver::update() {
 
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
+  
   auto node = std::make_shared<SlugbotDriver>();
+
   rclcpp::spin(node);
+  
   rclcpp::shutdown();
+
   return 0;
 }
