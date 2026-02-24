@@ -12,12 +12,12 @@ def generate_launch_description():
         executable='slugbot_driver_node',
     )
 
-    drivetrain = Node(
+    serial = Node(
         package='slugbot_package',
-        executable='drivetrain_node',
+        executable='SerialNode.py',
     )
 
     return LaunchDescription([
         slugbot_node,
-        drivetrain
+        serial
     ])

@@ -8,6 +8,7 @@ endif()
 # Besides the package specific dependencies we also need the `pluginlib` and `webots_ros2_driver`
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclpy REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -66,13 +67,10 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}
 )
 
-add_executable(drivetrain_node src/Drivetrain.cpp)
-ament_target_dependencies(drivetrain_node
-  rclcpp
-  std_msgs
-)
-install(TARGETS
-  drivetrain_node
+
+# Install Python Serial node
+install(PROGRAMS
+  scripts/SerialNode.py
   DESTINATION lib/${PROJECT_NAME}
 )
 # Install additional directories.
@@ -112,4 +110,3 @@ ament_package()
 # Link geometry library into executables that may use it
 target_link_libraries(slugbot_driver_node slugbot_geometry)
 target_link_libraries(${PROJECT_NAME} slugbot_geometry)
-target_link_libraries(drivetrain_node slugbot_geometry)
