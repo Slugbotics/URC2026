@@ -84,11 +84,11 @@ void Simulation::step() {
   keyboard_publisher->publish(std::move(msg));
 
   // This simulation is currently only an approximation of swerve
-  for(int i = 0; i < 4; i++) {
-    double speed = i % 2 == 0 ? left_wheel_speed_msg : right_wheel_speed_msg;
+  for(int i = 0; i < WHEEL_COUNT; i++) {
+    double speed = (i % 2 == 0) ? left_wheel_speed_msg : right_wheel_speed_msg;
     wb_motor_set_velocity(motors[i], -speed);
     double turnAngle = 0;
-    // double turnAngle = i%3 == 0 ? -M_PI/8 : M_PI/8;
+    // double turnAngle = (i % 3 == 0) ? -M_PI/8 : M_PI/8;
     wb_motor_set_position(turn_motors[i], turnAngle);
   }
 }
