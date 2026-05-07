@@ -17,10 +17,10 @@ class ControlsNode(Node):
             self.get_logger().warning('No joystick connected at startup.')
 
     def timer_callback(self):
+        pygame.event.pump()
         self.connect_joystick()
         msg = ControllerInput()
         if self.joystick is not None:
-            pygame.event.pump()
             msg.left_x = self.joystick.get_axis(0)
             msg.left_y = self.joystick.get_axis(1)
             msg.right_x = self.joystick.get_axis(3)
