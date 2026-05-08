@@ -56,6 +56,7 @@ ament_target_dependencies(
   rclcpp
   webots_ros2_driver
   std_msgs
+  messages
 )
 install(TARGETS
   ${PROJECT_NAME}
@@ -77,6 +78,16 @@ install(TARGETS
   slugbot_driver_node
   DESTINATION lib/${PROJECT_NAME}
 )
+
+add_executable(drivetrain_node src/Drivetrain.cpp)
+ament_target_dependencies(drivetrain_node
+  rclcpp
+  std_msgs
+)
+install(TARGETS
+  drivetrain_node
+  DESTINATION lib/${PROJECT_NAME}
+)
 # Install additional directories.
 install(DIRECTORY
   launch
@@ -85,6 +96,24 @@ install(DIRECTORY
   protos
   DESTINATION share/${PROJECT_NAME}/
 )
+# Geometry utilities library from repository utils
+add_library(slugbot_geometry STATIC
+  ${CMAKE_SOURCE_DIR}/../utils/math/Translation2d.cpp
+  ${CMAKE_SOURCE_DIR}/../utils/math/Rotation2d.cpp
+  ${CMAKE_SOURCE_DIR}/../utils/math/Pose2d.cpp
+)
+target_include_directories(slugbot_geometry PUBLIC
+  ${CMAKE_SOURCE_DIR}/../utils
+)
+target_compile_features(slugbot_geometry PUBLIC cxx_std_14)
+install(TARGETS
+  slugbot_geometry
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+ament_export_libraries(slugbot_geometry)
+ament_export_include_directories(${CMAKE_SOURCE_DIR}/../utils)
 ament_export_include_directories(
   include
 )
@@ -92,3 +121,9 @@ ament_export_libraries(
   ${PROJECT_NAME}
 )
 ament_package()
+
+# Link geometry library into executables that may use it
+target_link_libraries(slugbot_driver_node slugbot_geometry)
+target_link_libraries(${PROJECT_NAME} slugbot_geometry)
+target_link_libraries(obstacle_avoider slugbot_geometry)
+target_link_libraries(drivetrain_node slugbot_geometry)
